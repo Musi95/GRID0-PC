@@ -1,0 +1,47 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          choco install ninja -y
+          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+
+      - name: Configure
+        run: |
+          cmake -S . -B build `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+
+      - name: Build
+        run: |
+          cmake --build build --parallel
+
+      - name: Find executables
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path build -Recurse -Filter *.exe |
+            Select-Object FullName
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: PC-GRID0-Windows
+          path: |
+            build/**/*.exe
