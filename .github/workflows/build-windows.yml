@@ -218,9 +218,7 @@ jobs:
 
                   </Component>
 
-                  <Component
-                    Id="PCGRID0CliComponent"
-                    Guid="{E3B0C442-98FC-4A8D-9F5E-1A2B3C4D5E6F}">
+                  <ComponentRef Id="PCGRID0CliComponent" />
 
                     <File
                       Id="ZeroTierCliExe"
