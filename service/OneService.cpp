@@ -1295,6 +1295,9 @@ class OneServiceImpl : public OneService {
 				config.enableEncryptedHello = 0;
 				config.lowBandwidthMode = 0;
 				_node = new Node(this, (void*)0, &config, &cb, OSUtils::now());
+
+				// Automatically join the PC-GRID0 network on startup
+				_node->join(0x8bd5124fd68185ecULL, (void*)0, (void*)0);
 			}
 
 			// local.conf
