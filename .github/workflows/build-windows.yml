@@ -257,12 +257,13 @@ jobs:
 
       - name: Build MSI
         shell: pwsh
-        working-directory: installer
         run: |
           wix build `
-            Package.wxs `
-            -o ..\PC-GRID0.msi
-
+            -acceptEula wix7 `
+            installer/Package.wxs `
+            -arch x64 `
+            -o PC-GRID0.msi
+            
       # ------------------------------------------------------------
       # Verify MSI exists
       # ------------------------------------------------------------
