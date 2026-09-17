@@ -168,7 +168,6 @@ jobs:
       # ------------------------------------------------------------
       # Create WiX installer
       # ------------------------------------------------------------
-
       - name: Create WiX project
         shell: pwsh
         run: |
@@ -190,8 +189,9 @@ jobs:
 
                 <Directory Id="INSTALLFOLDER" Name="PC-GRID0">
 
-                  <Component Id="PCGRID0ServiceComponent"
-                             Guid="{A4A0F9B3-6B6A-4A3C-8A62-9C0E7E7C7A11}">
+                  <Component
+                    Id="PCGRID0ServiceComponent"
+                    Guid="{A4A0F9B3-6B6A-4A3C-8A62-9C0E7E7C7A11}">
 
                     <File
                       Id="ZeroTierOneExe"
@@ -218,27 +218,16 @@ jobs:
 
                   </Component>
 
-                  <ComponentRef Id="PCGRID0CliComponent" />
-
-                    <File
-                      Id="ZeroTierCliExe"
-                      Source="files\zerotier-cli.exe"
-                      KeyPath="yes"
-                      Vital="no" />
-
-                  </Component>
-
                 </Directory>
 
               </StandardDirectory>
 
-              <Feature Id="MainFeature" Title="PC-GRID0" Level="1">
+              <Feature
+                Id="MainFeature"
+                Title="PC-GRID0"
+                Level="1">
 
                 <ComponentRef Id="PCGRID0ServiceComponent" />
-
-                <ComponentRef
-                  Id="PCGRID0CliComponent"
-                  Condition="0" />
 
               </Feature>
 
@@ -248,19 +237,6 @@ jobs:
           "@ | Out-File `
             -Encoding UTF8 `
             installer\Package.wxs
-
-      # ------------------------------------------------------------
-      # Build MSI
-      # ------------------------------------------------------------
-
-      - name: Build MSI
-        shell: pwsh
-        run: |
-          wix build `
-            -acceptEula wix7 `
-            installer/Package.wxs `
-            -arch x64 `
-            -o PC-GRID0.msi
             
       # ------------------------------------------------------------
       # Verify MSI exists
