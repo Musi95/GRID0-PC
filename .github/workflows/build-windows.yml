@@ -29,11 +29,6 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
 
-      - name: Install dependencies
-        shell: pwsh
-        run: |
-          C:\vcpkg\vcpkg.exe install nlohmann-json:x64-windows
-
       - name: Bootstrap ZeroTier dependencies
         shell: bash
         run: |
@@ -75,7 +70,7 @@ jobs:
           Write-Host "=== Release contents ==="
           Get-ChildItem release
 
-      - name: Upload Windows executables
+      - name: Upload executables
         uses: actions/upload-artifact@v4
         with:
           name: PC-GRID0-Windows
