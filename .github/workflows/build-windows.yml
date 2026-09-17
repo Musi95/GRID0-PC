@@ -15,12 +15,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Ninja
         shell: pwsh
         run: |
           choco install ninja -y
+
+      - name: Install vcpkg
+        shell: pwsh
+        run: |
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          C:\vcpkg\vcpkg.exe install nlohmann-json:x64-windows
 
       - name: Bootstrap ZeroTier dependencies
         shell: bash
@@ -28,14 +40,16 @@ jobs:
           bash scripts/bootstrap-deps.sh
 
       - name: Configure
-        shell: bash
+        shell: pwsh
         run: |
-          cmake -S . -B build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
 
       - name: Build
-        shell: bash
+        shell: pwsh
         run: |
           cmake --build build --parallel
 
