@@ -21,7 +21,6 @@ jobs:
           choco install ninja -y
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
-          "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Bootstrap ZeroTier dependencies
         shell: bash
@@ -43,12 +42,27 @@ jobs:
       - name: Find executables
         shell: pwsh
         run: |
+          Write-Host "=== Executables ==="
           Get-ChildItem -Path build -Recurse -Filter *.exe |
-            Select-Object FullName
+            ForEach-Object {
+              Write-Host $_.FullName
+            }
 
-      - name: Upload build
+      - name: Package executables
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release
+
+          Get-ChildItem -Path build -Recurse -Filter *.exe |
+            ForEach-Object {
+              Copy-Item $_.FullName release\
+            }
+
+          Write-Host "=== Release contents ==="
+          Get-ChildItem release
+
+      - name: Upload Windows executables
         uses: actions/upload-artifact@v4
         with:
           name: PC-GRID0-Windows
-          path: |
-            build/**/*.exe
+          path: release/
