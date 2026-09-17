@@ -1,4 +1,4 @@
-name: Build Windows
+name: Build PC-GRID0 Windows MSI
 
 on:
   workflow_dispatch:
@@ -7,21 +7,42 @@ on:
       - main
       - dev
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-2022
 
     steps:
+      # ------------------------------------------------------------
+      # Source
+      # ------------------------------------------------------------
+
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------------
+      # MSVC
+      # ------------------------------------------------------------
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # ------------------------------------------------------------
+      # Ninja
+      # ------------------------------------------------------------
 
       - name: Install Ninja
         shell: pwsh
         run: |
           choco install ninja -y
+
+      # ------------------------------------------------------------
+      # vcpkg
+      # ------------------------------------------------------------
 
       - name: Install vcpkg
         shell: pwsh
@@ -29,49 +50,241 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
 
+          "VCPKG_ROOT=C:\vcpkg" | Out-File `
+            -FilePath $env:GITHUB_ENV `
+            -Append
+
+      # ------------------------------------------------------------
+      # ZeroTier dependencies
+      # ------------------------------------------------------------
+
       - name: Bootstrap ZeroTier dependencies
         shell: bash
         run: |
           bash scripts/bootstrap-deps.sh
 
+      # ------------------------------------------------------------
+      # Configure
+      # ------------------------------------------------------------
+
       - name: Configure
         shell: pwsh
         run: |
           cmake -S . -B build `
-            -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
+            -G "Visual Studio 17 2022" `
+            -A x64 `
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake `
-            -DVCPKG_TARGET_TRIPLET=x64-windows
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCMAKE_PREFIX_PATH="${env:GITHUB_WORKSPACE}\.deps\x64"
+
+      # ------------------------------------------------------------
+      # Build
+      # ------------------------------------------------------------
 
       - name: Build
         shell: pwsh
         run: |
-          cmake --build build --parallel
+          cmake --build build `
+            --config Release `
+            --parallel
 
-      - name: Find executables
+      # ------------------------------------------------------------
+      # Locate daemon
+      # ------------------------------------------------------------
+
+      - name: Locate built executable
         shell: pwsh
         run: |
-          Write-Host "=== Executables ==="
-          Get-ChildItem -Path build -Recurse -Filter *.exe |
+          Write-Host "=== EXE FILES ==="
+
+          Get-ChildItem `
+            -Path build `
+            -Recurse `
+            -Filter *.exe |
             ForEach-Object {
               Write-Host $_.FullName
             }
 
-      - name: Package executables
+      # ------------------------------------------------------------
+      # Prepare MSI staging directory
+      # ------------------------------------------------------------
+
+      - name: Prepare installer files
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release
+          New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path installer\files
 
-          Get-ChildItem -Path build -Recurse -Filter *.exe |
-            ForEach-Object {
-              Copy-Item $_.FullName release\
-            }
+          $daemon = Get-ChildItem `
+            -Path build `
+            -Recurse `
+            -Filter zerotier-one.exe |
+            Select-Object -First 1
 
-          Write-Host "=== Release contents ==="
-          Get-ChildItem release
+          if (-not $daemon) {
+            Write-Error "zerotier-one.exe was not found"
+            exit 1
+          }
 
-      - name: Upload executables
+          Write-Host "Daemon:"
+          Write-Host $daemon.FullName
+
+          Copy-Item `
+            $daemon.FullName `
+            installer\files\zerotier-one.exe
+
+          # Look for zerotier-cli if this build produced it.
+          $cli = Get-ChildItem `
+            -Path build `
+            -Recurse `
+            -Filter zerotier-cli.exe |
+            Select-Object -First 1
+
+          if ($cli) {
+            Write-Host "CLI:"
+            Write-Host $cli.FullName
+
+            Copy-Item `
+              $cli.FullName `
+              installer\files\zerotier-cli.exe
+          }
+
+          Write-Host "=== INSTALLER FILES ==="
+          Get-ChildItem installer\files
+
+      # ------------------------------------------------------------
+      # Install WiX
+      # ------------------------------------------------------------
+
+      - name: Install WiX
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix
+
+          wix --version
+
+      # ------------------------------------------------------------
+      # Create WiX installer
+      # ------------------------------------------------------------
+
+      - name: Create WiX project
+        shell: pwsh
+        run: |
+          @"
+          <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+            <Package
+              Name="PC-GRID0"
+              Manufacturer="PC-GRID0"
+              Version="1.0.0.0"
+              UpgradeCode="{9E8F0E32-7F13-4B9A-BD37-7D1A8D7D8F01}">
+
+              <MajorUpgrade
+                DowngradeErrorMessage="A newer version of PC-GRID0 is already installed." />
+
+              <MediaTemplate EmbedCab="yes" />
+
+              <StandardDirectory Id="ProgramFiles64Folder">
+
+                <Directory Id="INSTALLFOLDER" Name="PC-GRID0">
+
+                  <Component Id="PCGRID0ServiceComponent"
+                             Guid="{A4A0F9B3-6B6A-4A3C-8A62-9C0E7E7C7A11}">
+
+                    <File
+                      Id="ZeroTierOneExe"
+                      Source="files\zerotier-one.exe"
+                      KeyPath="yes" />
+
+                    <ServiceInstall
+                      Id="ZeroTierOneServiceInstall"
+                      Name="ZeroTierOneService"
+                      DisplayName="PC-GRID0"
+                      Description="PC-GRID0 ZeroTier networking service"
+                      Start="auto"
+                      Type="ownProcess"
+                      ErrorControl="normal"
+                      Vital="yes" />
+
+                    <ServiceControl
+                      Id="ZeroTierOneServiceControl"
+                      Name="ZeroTierOneService"
+                      Start="install"
+                      Stop="both"
+                      Remove="uninstall"
+                      Wait="yes" />
+
+                  </Component>
+
+                  <Component
+                    Id="PCGRID0CliComponent"
+                    Guid="{E3B0C442-98FC-4A8D-9F5E-1A2B3C4D5E6F}">
+
+                    <File
+                      Id="ZeroTierCliExe"
+                      Source="files\zerotier-cli.exe"
+                      KeyPath="yes"
+                      Vital="no" />
+
+                  </Component>
+
+                </Directory>
+
+              </StandardDirectory>
+
+              <Feature Id="MainFeature" Title="PC-GRID0" Level="1">
+
+                <ComponentRef Id="PCGRID0ServiceComponent" />
+
+                <ComponentRef
+                  Id="PCGRID0CliComponent"
+                  Condition="0" />
+
+              </Feature>
+
+            </Package>
+
+          </Wix>
+          "@ | Out-File `
+            -Encoding UTF8 `
+            installer\Package.wxs
+
+      # ------------------------------------------------------------
+      # Build MSI
+      # ------------------------------------------------------------
+
+      - name: Build MSI
+        shell: pwsh
+        working-directory: installer
+        run: |
+          wix build `
+            Package.wxs `
+            -o ..\PC-GRID0.msi
+
+      # ------------------------------------------------------------
+      # Verify MSI exists
+      # ------------------------------------------------------------
+
+      - name: Verify MSI
+        shell: pwsh
+        run: |
+          if (-not (Test-Path PC-GRID0.msi)) {
+            Write-Error "PC-GRID0.msi was not created"
+            exit 1
+          }
+
+          Get-Item PC-GRID0.msi |
+            Select-Object FullName, Length
+
+      # ------------------------------------------------------------
+      # Upload MSI
+      # ------------------------------------------------------------
+
+      - name: Upload PC-GRID0 MSI
         uses: actions/upload-artifact@v4
         with:
-          name: PC-GRID0-Windows
-          path: release/
+          name: PC-GRID0-Windows-MSI
+          path: PC-GRID0.msi
+          if-no-files-found: error
