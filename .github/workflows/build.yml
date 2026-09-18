@@ -40,7 +40,7 @@ jobs:
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: zerotier-one-ubuntu-x64
+        name: GRID0-PC-ubuntu-x64
         path: zerotier-one.tar
         retention-days: 7
 
@@ -84,7 +84,7 @@ jobs:
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: zerotier-one-mac
+        name: GRID0-PC-mac
         path: zerotier-one.tar
         retention-days: 7
 
@@ -121,6 +121,6 @@ jobs:
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: zerotier-one-windows
+        name: GRID0-PC-windows
         path: windows/Build
         retention-days: 7
