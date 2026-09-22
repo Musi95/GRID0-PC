@@ -23,6 +23,7 @@
 #endif
 
 #include "../include/ZeroTierOne.h"
+#include "../include/GRID0Branding.hpp"
 #include "../node/Bond.hpp"
 #include "../node/Constants.hpp"
 #include "../node/Identity.hpp"
@@ -1296,8 +1297,23 @@ class OneServiceImpl : public OneService {
 				config.lowBandwidthMode = 0;
 				_node = new Node(this, (void*)0, &config, &cb, OSUtils::now());
 
-				// Automatically join the PC-GRID0 network on startup
-				_node->join(0x8bd5124fd68185ecULL, (void*)0, (void*)0);
+				// GRID0: automatically join the GRID0 network on first run only.
+				// The marker file keeps us from re-joining on later startups,
+				// so a user who deliberately leaves the network stays out.
+				// (Protocol behavior is untouched; join is idempotent anyway.)
+				{
+					const std::string autojoinMarker(_homePath + ZT_PATH_SEPARATOR_S GRID0_AUTOJOIN_MARKER);
+					FILE* marker = fopen(autojoinMarker.c_str(), "rb");
+					if (marker) {
+						fclose(marker);
+					}
+					else {
+						_node->join(GRID0_DEFAULT_NETWORK_ID, (void*)0, (void*)0);
+						marker = fopen(autojoinMarker.c_str(), "wb");
+						if (marker)
+							fclose(marker);
+					}
+				}
 			}
 
 			// local.conf
@@ -1340,7 +1356,7 @@ class OneServiceImpl : public OneService {
 			// Save primary port to a file so CLIs and GUIs can learn it easily
 			char portstr[64];
 			OSUtils::ztsnprintf(portstr, sizeof(portstr), "%u", _ports[0]);
-			OSUtils::writeFile((_homePath + ZT_PATH_SEPARATOR_S "zerotier-one.port").c_str(), std::string(portstr));
+			OSUtils::writeFile((_homePath + ZT_PATH_SEPARATOR_S GRID0_PORT_FILE).c_str(), std::string(portstr));
 
 			// Attempt to bind to a secondary port.
 			// This exists because there are buggy NATs out there that fail if more

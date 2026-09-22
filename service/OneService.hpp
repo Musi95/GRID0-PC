@@ -98,7 +98,7 @@ class OneService {
 	 * Once created, you must call the run() method to actually start
 	 * processing.
 	 *
-	 * The port is saved to a file in the home path called zerotier-one.port,
+	 * The port is saved to a file in the home path called grid0-pc.port,
 	 * which is used by the CLI and can be used to see which port was chosen if
 	 * 0 (random port) is picked.
 	 *

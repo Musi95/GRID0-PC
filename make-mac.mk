@@ -1,3 +1,8 @@
+# GRID0 branding: output binary names and home dir (see include/GRID0Branding.hpp)
+GRID0_ONE := grid0-pc
+GRID0_CLI := grid0-cli
+GRID0_IDTOOL := grid0-idtool
+
 CC=clang
 CXX=clang++
 TOPDIR=$(shell pwd)
@@ -111,13 +116,13 @@ osdep/MacDNSHelper.o: osdep/MacDNSHelper.mm
 	$(CXX) $(CXXFLAGS) -c osdep/MacDNSHelper.mm -o osdep/MacDNSHelper.o
 
 one:	otel rustybits $(CORE_OBJS) $(ONE_OBJS) one.o mac-agent
-	$(CXX) $(CXXFLAGS) -o zerotier-one $(CORE_OBJS) $(ONE_OBJS) one.o $(LIBS) rustybits/target/librustybits.a
-	# $(STRIP) zerotier-one
-	ln -sf zerotier-one zerotier-idtool
-	ln -sf zerotier-one zerotier-cli
-	$(CODESIGN) -f --options=runtime -s $(CODESIGN_APP_CERT) zerotier-one
+	$(CXX) $(CXXFLAGS) -o $(GRID0_ONE) $(CORE_OBJS) $(ONE_OBJS) one.o $(LIBS) rustybits/target/librustybits.a
+	# $(STRIP) $(GRID0_ONE)
+	ln -sf $(GRID0_ONE) $(GRID0_IDTOOL)
+	ln -sf $(GRID0_ONE) $(GRID0_CLI)
+	$(CODESIGN) -f --options=runtime -s $(CODESIGN_APP_CERT) $(GRID0_ONE)
 
-zerotier-one: one
+$(GRID0_ONE): one
 
 rustybits: rustybits/target/rustybits.a
 
@@ -126,9 +131,9 @@ rustybits/target/rustybits.a:	FORCE
 	cd rustybits && MACOSX_DEPLOYMENT_TARGET=$(MACOS_VERSION_MIN) cargo build --target=aarch64-apple-darwin $(EXTRA_CARGO_FLAGS)
 	cd rustybits && lipo -create target/x86_64-apple-darwin/$(RUST_VARIANT)/librustybits.a target/aarch64-apple-darwin/$(RUST_VARIANT)/librustybits.a -output target/librustybits.a
 
-zerotier-idtool: one
+$(GRID0_IDTOOL): one
 
-zerotier-cli: one
+$(GRID0_CLI): one
 
 $(ONE_OBJS): rustybits
 
@@ -177,7 +182,7 @@ docker-release:	_buildx
 	docker buildx build --platform linux/386,linux/amd64,linux/arm/v7,linux/arm64,linux/mips64le,linux/ppc64le,linux/s390x -t zerotier/zerotier:${RELEASE_DOCKER_TAG} -t zerotier/zerotier:latest --build-arg VERSION=${RELEASE_VERSION} -f Dockerfile.release . --push
 
 clean:
-	rm -rf MacEthernetTapAgent *.dSYM build-* *.a *.pkg *.dmg *.o node/*.o nonfree/controller/*.o service/*.o osdep/*.o ext/http-parser/*.o $(CORE_OBJS) $(ONE_OBJS) zerotier-one zerotier-idtool zerotier-selftest zerotier-cli zerotier doc/node_modules zt1_update_$(ZT_BUILD_PLATFORM)_$(ZT_BUILD_ARCHITECTURE)_* rustybits/target/
+	rm -rf MacEthernetTapAgent *.dSYM build-* *.a *.pkg *.dmg *.o node/*.o nonfree/controller/*.o service/*.o osdep/*.o ext/http-parser/*.o $(CORE_OBJS) $(ONE_OBJS) $(GRID0_ONE) $(GRID0_IDTOOL) zerotier-selftest $(GRID0_CLI) zerotier doc/node_modules zt1_update_$(ZT_BUILD_PLATFORM)_$(ZT_BUILD_ARCHITECTURE)_* rustybits/target/
 
 otel:
 	@echo "OpenTelemetry API headers are vendored (ext/opentelemetry-cpp-api-only); nothing to build."

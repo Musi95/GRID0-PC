@@ -1,5 +1,11 @@
 # Automagically pick CLANG or RH/CentOS newer GCC if present
 # This is only done if we have not overridden these with an environment or CLI variable
+
+# GRID0 branding: output binary names and home dir (see include/GRID0Branding.hpp)
+GRID0_ONE := grid0-pc
+GRID0_CLI := grid0-cli
+GRID0_IDTOOL := grid0-idtool
+GRID0_HOME_DIR := /var/lib/grid0-pc
 ifeq ($(origin CC),default)
 	CC:=$(shell if [ -e /usr/bin/clang ]; then echo clang; else echo gcc; fi)
 	CC:=$(shell if [ -e /opt/rh/devtoolset-8/root/usr/bin/gcc ]; then echo /opt/rh/devtoolset-8/root/usr/bin/gcc; else echo $(CC); fi)
@@ -371,20 +377,20 @@ override LDFLAGS+=-Wl,-z,noexecstack
 all:	one
 
 .PHONY: one
-one: otel zerotier-one zerotier-idtool zerotier-cli
+one: otel $(GRID0_ONE) $(GRID0_IDTOOL) $(GRID0_CLI)
 
 from_builder:	FORCE
-	ln -sf zerotier-one zerotier-idtool
-	ln -sf zerotier-one zerotier-cli
+	ln -sf $(GRID0_ONE) $(GRID0_IDTOOL)
+	ln -sf $(GRID0_ONE) $(GRID0_CLI)
 
-zerotier-one: $(CORE_OBJS) $(ONE_OBJS) one.o ext/${OTEL_INSTALL_DIR}/include/opentelemetry/version.h
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o zerotier-one $(CORE_OBJS) $(ONE_OBJS) one.o $(LDLIBS)
+$(GRID0_ONE): $(CORE_OBJS) $(ONE_OBJS) one.o ext/${OTEL_INSTALL_DIR}/include/opentelemetry/version.h
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(GRID0_ONE) $(CORE_OBJS) $(ONE_OBJS) one.o $(LDLIBS)
 
-zerotier-idtool: zerotier-one
-	ln -sf zerotier-one zerotier-idtool
+$(GRID0_IDTOOL): $(GRID0_ONE)
+	ln -sf $(GRID0_ONE) $(GRID0_IDTOOL)
 
-zerotier-cli: zerotier-one
-	ln -sf zerotier-one zerotier-cli
+$(GRID0_CLI): $(GRID0_ONE)
+	ln -sf $(GRID0_ONE) $(GRID0_CLI)
 
 $(ONE_OBJS): zeroidc rustybits
 
@@ -411,7 +417,7 @@ otel:
 ext/${OTEL_INSTALL_DIR}/include/opentelemetry/version.h: otel
 
 clean: FORCE
-	rm -rf *.a *.so *.o node/*.o nonfree/controller/*.o osdep/*.o service/*.o ext/http-parser/*.o ext/miniupnpc/*.o ext/libnatpmp/*.o $(CORE_OBJS) $(ONE_OBJS) zerotier-one zerotier-idtool zerotier-cli zerotier-selftest build-* ZeroTierOneInstaller-* *.deb *.rpm .depend debian/files debian/zerotier-one*.debhelper debian/zerotier-one.substvars debian/*.log debian/zerotier-one doc/node_modules ext/misc/*.o debian/.debhelper debian/debhelper-build-stamp docker/zerotier-one rustybits/target
+	rm -rf *.a *.so *.o node/*.o nonfree/controller/*.o osdep/*.o service/*.o ext/http-parser/*.o ext/miniupnpc/*.o ext/libnatpmp/*.o $(CORE_OBJS) $(ONE_OBJS) $(GRID0_ONE) $(GRID0_IDTOOL) $(GRID0_CLI) zerotier-selftest build-* ZeroTierOneInstaller-* *.deb *.rpm .depend debian/files debian/zerotier-one*.debhelper debian/zerotier-one.substvars debian/*.log debian/zerotier-one doc/node_modules ext/misc/*.o debian/.debhelper debian/debhelper-build-stamp docker/zerotier-one rustybits/target
 
 distclean:	clean
 
@@ -436,52 +442,52 @@ else
 zeroidc:
 endif
 
-# Note: keep the symlinks in /var/lib/zerotier-one to the binaries since these
+# Note: keep the symlinks in $(GRID0_HOME_DIR) to the binaries since these
 # provide backward compatibility with old releases where the binaries actually
 # lived here. Folks got scripts.
 
 install:	FORCE
 	mkdir -p $(DESTDIR)/usr/sbin
-	rm -f $(DESTDIR)/usr/sbin/zerotier-one
-	cp -f zerotier-one $(DESTDIR)/usr/sbin/zerotier-one
-	rm -f $(DESTDIR)/usr/sbin/zerotier-cli
-	rm -f $(DESTDIR)/usr/sbin/zerotier-idtool
-	ln -s zerotier-one $(DESTDIR)/usr/sbin/zerotier-cli
-	ln -s zerotier-one $(DESTDIR)/usr/sbin/zerotier-idtool
-	mkdir -p $(DESTDIR)/var/lib/zerotier-one
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-one
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-cli
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-idtool
-	ln -s ../../../usr/sbin/zerotier-one $(DESTDIR)/var/lib/zerotier-one/zerotier-one
-	ln -s ../../../usr/sbin/zerotier-one $(DESTDIR)/var/lib/zerotier-one/zerotier-cli
-	ln -s ../../../usr/sbin/zerotier-one $(DESTDIR)/var/lib/zerotier-one/zerotier-idtool
+	rm -f $(DESTDIR)/usr/sbin/$(GRID0_ONE)
+	cp -f $(GRID0_ONE) $(DESTDIR)/usr/sbin/$(GRID0_ONE)
+	rm -f $(DESTDIR)/usr/sbin/$(GRID0_CLI)
+	rm -f $(DESTDIR)/usr/sbin/$(GRID0_IDTOOL)
+	ln -s $(GRID0_ONE) $(DESTDIR)/usr/sbin/$(GRID0_CLI)
+	ln -s $(GRID0_ONE) $(DESTDIR)/usr/sbin/$(GRID0_IDTOOL)
+	mkdir -p $(DESTDIR)$(GRID0_HOME_DIR)
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_ONE)
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_CLI)
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_IDTOOL)
+	ln -s ../../../usr/sbin/$(GRID0_ONE) $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_ONE)
+	ln -s ../../../usr/sbin/$(GRID0_ONE) $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_CLI)
+	ln -s ../../../usr/sbin/$(GRID0_ONE) $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_IDTOOL)
 	mkdir -p $(DESTDIR)/usr/share/man/man8
-	rm -f $(DESTDIR)/usr/share/man/man8/zerotier-one.8.gz
-	cat doc/zerotier-one.8 | gzip -9 >$(DESTDIR)/usr/share/man/man8/zerotier-one.8.gz
+	rm -f $(DESTDIR)/usr/share/man/man8/$(GRID0_ONE).8.gz
+	cat doc/$(GRID0_ONE).8 | gzip -9 >$(DESTDIR)/usr/share/man/man8/$(GRID0_ONE).8.gz
 	mkdir -p $(DESTDIR)/usr/share/man/man1
-	rm -f $(DESTDIR)/usr/share/man/man1/zerotier-idtool.1.gz
-	rm -f $(DESTDIR)/usr/share/man/man1/zerotier-cli.1.gz
-	cat doc/zerotier-cli.1 | gzip -9 >$(DESTDIR)/usr/share/man/man1/zerotier-cli.1.gz
-	cat doc/zerotier-idtool.1 | gzip -9 >$(DESTDIR)/usr/share/man/man1/zerotier-idtool.1.gz
-	cp ext/installfiles/linux/zerotier-one.te $(DESTDIR)/var/lib/zerotier-one/zerotier-one.te
+	rm -f $(DESTDIR)/usr/share/man/man1/$(GRID0_IDTOOL).1.gz
+	rm -f $(DESTDIR)/usr/share/man/man1/$(GRID0_CLI).1.gz
+	cat doc/$(GRID0_CLI).1 | gzip -9 >$(DESTDIR)/usr/share/man/man1/$(GRID0_CLI).1.gz
+	cat doc/$(GRID0_IDTOOL).1 | gzip -9 >$(DESTDIR)/usr/share/man/man1/$(GRID0_IDTOOL).1.gz
+	cp ext/installfiles/linux/zerotier-one.te $(DESTDIR)$(GRID0_HOME_DIR)/zerotier-one.te
 
 # Uninstall preserves identity.public and identity.secret since the user might
 # want to save these. These are your ZeroTier address.
 
 uninstall:	FORCE
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-one
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-cli
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-idtool
-	rm -f $(DESTDIR)/usr/sbin/zerotier-cli
-	rm -f $(DESTDIR)/usr/sbin/zerotier-idtool
-	rm -f $(DESTDIR)/usr/sbin/zerotier-one
-	rm -rf $(DESTDIR)/var/lib/zerotier-one/iddb.d
-	rm -rf $(DESTDIR)/var/lib/zerotier-one/updates.d
-	rm -rf $(DESTDIR)/var/lib/zerotier-one/networks.d
-	rm -f $(DESTDIR)/var/lib/zerotier-one/zerotier-one.port
-	rm -f $(DESTDIR)/usr/share/man/man8/zerotier-one.8.gz
-	rm -f $(DESTDIR)/usr/share/man/man1/zerotier-idtool.1.gz
-	rm -f $(DESTDIR)/usr/share/man/man1/zerotier-cli.1.gz
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_ONE)
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_CLI)
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_IDTOOL)
+	rm -f $(DESTDIR)/usr/sbin/$(GRID0_CLI)
+	rm -f $(DESTDIR)/usr/sbin/$(GRID0_IDTOOL)
+	rm -f $(DESTDIR)/usr/sbin/$(GRID0_ONE)
+	rm -rf $(DESTDIR)$(GRID0_HOME_DIR)/iddb.d
+	rm -rf $(DESTDIR)$(GRID0_HOME_DIR)/updates.d
+	rm -rf $(DESTDIR)$(GRID0_HOME_DIR)/networks.d
+	rm -f $(DESTDIR)$(GRID0_HOME_DIR)/$(GRID0_ONE).port
+	rm -f $(DESTDIR)/usr/share/man/man8/$(GRID0_ONE).8.gz
+	rm -f $(DESTDIR)/usr/share/man/man1/$(GRID0_IDTOOL).1.gz
+	rm -f $(DESTDIR)/usr/share/man/man1/$(GRID0_CLI).1.gz
 
 # These are just for convenience for building Linux packages
 

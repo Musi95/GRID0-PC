@@ -8,6 +8,7 @@
 
 #include "../node/Constants.hpp"
 #include "../node/Utils.hpp"
+#include "../include/GRID0Branding.hpp"
 
 #include <cstddef>
 #include <inttypes.h>
@@ -435,22 +436,10 @@ std::string OSUtils::platformDefaultHomePath()
 #endif
 
 	// Finally, resort to using default paths if no user-defined path was provided
+	// GRID0: branded default paths (see include/GRID0Branding.hpp)
 #ifdef __UNIX_LIKE__
 
-#ifdef __APPLE__
-	// /Library/... on Apple
-	return std::string("/Library/Application Support/ZeroTier/One");
-#else
-
-#ifdef __BSD__
-	// BSD likes /var/db instead of /var/lib
-	return std::string("/var/db/zerotier-one");
-#else
-	// Use /var/lib for Linux and other *nix
-	return std::string("/var/lib/zerotier-one");
-#endif
-
-#endif
+	return std::string(GRID0_DEFAULT_HOME);
 
 #else	// not __UNIX_LIKE__
 
@@ -458,12 +447,12 @@ std::string OSUtils::platformDefaultHomePath()
 	// Look up app data folder on Windows, e.g. C:\ProgramData\...
 	char buf[16384];
 	if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL, 0, buf)))
-		return (std::string(buf) + "\\ZeroTier\\One");
+		return (std::string(buf) + GRID0_HOME_SUBDIR);
 	else
-		return std::string("C:\\ZeroTier\\One");
+		return std::string(GRID0_HOME_FALLBACK);
 #else
 
-	return (std::string(ZT_PATH_SEPARATOR_S) + "ZeroTier" + ZT_PATH_SEPARATOR_S + "One");	// UNKNOWN PLATFORM
+	return std::string(GRID0_DEFAULT_HOME);	// UNKNOWN PLATFORM
 
 #endif
 

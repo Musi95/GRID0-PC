@@ -1,7 +1,11 @@
 # CMake build script for libzerotiercore.a
 
 cmake_minimum_required(VERSION 3.15)
-project(zerotier-one LANGUAGES CXX C)
+# GRID0 branding: output binary names (see include/GRID0Branding.hpp)
+set(GRID0_BIN_ONE grid0-pc)
+set(GRID0_BIN_CLI grid0-cli)
+set(GRID0_BIN_IDTOOL grid0-idtool)
+project(grid0-pc LANGUAGES CXX C)
 
 # ---------------------------------------------------------------------------
 # Options
@@ -649,7 +653,7 @@ endif()
 # ---------------------------------------------------------------------------
 # Targets
 # ---------------------------------------------------------------------------
-add_executable(zerotier-one
+add_executable(${GRID0_BIN_ONE}
     one.cpp
     ext/http-parser/http_parser.c
 )
@@ -657,14 +661,14 @@ add_executable(zerotier-one
 # "windows/ZeroTierOne/...", so compile those sources in and add the repo root to
 # the include path. (The SDK and TAP driver stay in the MSBuild solution.)
 if(WIN32)
-    target_sources(zerotier-one PRIVATE
+    target_sources(${GRID0_BIN_ONE} PRIVATE
         windows/ZeroTierOne/ServiceBase.cpp
         windows/ZeroTierOne/ServiceInstaller.cpp
         windows/ZeroTierOne/ZeroTierOneService.cpp
     )
-    target_include_directories(zerotier-one PRIVATE ${PROJ_DIR})
+    target_include_directories(${GRID0_BIN_ONE} PRIVATE ${PROJ_DIR})
 endif()
-target_link_libraries(zerotier-one ${LINKED_LIBRARIES})
+target_link_libraries(${GRID0_BIN_ONE} ${LINKED_LIBRARIES})
 
 # The Windows .vcxproj doesn't build the selftest; skip it on Windows too.
 if(NOT WIN32)

@@ -12,6 +12,7 @@
 #endif
 
 #include "node/Constants.hpp"
+#include "include/GRID0Branding.hpp"
 
 #include <errno.h>
 #include <stdint.h>
@@ -93,13 +94,13 @@
 #include <sys/types.h>
 #endif
 
-#define ZT_PID_PATH "zerotier-one.pid"
+#define ZT_PID_PATH GRID0_PID_FILE // GRID0 rebrand (see include/GRID0Branding.hpp)
 
 using namespace ZeroTier;
 
 static OneService* volatile zt1Service = (OneService*)0;
 
-#define PROGRAM_NAME	 "ZeroTier One"
+#define PROGRAM_NAME	 GRID0_PRODUCT_NAME_LONG // GRID0 rebrand (see include/GRID0Branding.hpp)
 #define COPYRIGHT_NOTICE "Copyright (c) ZeroTier, Inc."
 
 #ifdef ZT_NONFREE_CONTROLLER
@@ -130,7 +131,7 @@ static void cliPrintHelp(const char* pn, FILE* out)
 	fprintf(out, "  -h                      - Display this help" ZT_EOL_S);
 	fprintf(out, "  -v                      - Show version" ZT_EOL_S);
 	fprintf(out, "  -j                      - Display full raw JSON output" ZT_EOL_S);
-	fprintf(out, "  -D<path>                - ZeroTier home path for parameter auto-detect" ZT_EOL_S);
+	fprintf(out, "  -D<path>                - GRID0 home path for parameter auto-detect" ZT_EOL_S);
 	fprintf(out, "  -p<port>                - HTTP port (default: auto)" ZT_EOL_S);
 	fprintf(out, "  -T<token>               - Authentication token (default: auto)" ZT_EOL_S);
 	fprintf(out, ZT_EOL_S "Available commands:" ZT_EOL_S);
@@ -145,9 +146,9 @@ static void cliPrintHelp(const char* pn, FILE* out)
 	fprintf(out, "  dump                    - Debug settings dump for support" ZT_EOL_S);
 	fprintf(out, ZT_EOL_S "Available settings:" ZT_EOL_S);
 	fprintf(out, "  Settings to use with [get/set] may include property names from " ZT_EOL_S);
-	fprintf(out, "  the JSON output of \"zerotier-cli -j listnetworks\". Additionally, " ZT_EOL_S);
+	fprintf(out, "  the JSON output of \"" GRID0_BIN_CLI " -j listnetworks\\\". Additionally, " ZT_EOL_S);
 	fprintf(out, "  (ip, ip4, ip6, ip6plane, and ip6prefix can be used). For instance:" ZT_EOL_S);
-	fprintf(out, "  zerotier-cli get <network ID> ip6plane will return the 6PLANE address" ZT_EOL_S);
+	fprintf(out, "  " GRID0_BIN_CLI " get <network ID> ip6plane will return the 6PLANE address" ZT_EOL_S);
 	fprintf(out, "  assigned to this node." ZT_EOL_S);
 }
 
@@ -265,10 +266,10 @@ static int cli(int argc, char** argv)
 
 		if (! port) {
 			std::string portStr;
-			OSUtils::readFile((homeDir + ZT_PATH_SEPARATOR_S + "zerotier-one.port").c_str(), portStr);
+			OSUtils::readFile((homeDir + ZT_PATH_SEPARATOR_S + GRID0_PORT_FILE).c_str(), portStr);
 			port = Utils::strToUInt(portStr.c_str());
 			if ((port == 0) || (port > 0xffff)) {
-				fprintf(stderr, "%s: missing port and zerotier-one.port not found in %s" ZT_EOL_S, argv[0], homeDir.c_str());
+				fprintf(stderr, "%s: missing port and " GRID0_PORT_FILE " not found in %s" ZT_EOL_S, argv[0], homeDir.c_str());
 				return 2;
 			}
 		}
@@ -1726,7 +1727,7 @@ static void _sighandlerFatal(int sig, siginfo_t* info, void*)
 #endif	// ZT1_CENTRAL_CONTROLLER
 #endif
 
-// Drop privileges on Linux, if supported by libc etc. and "zerotier-one" user exists on system
+// Drop privileges on Linux, if supported by libc etc. and "grid0-pc" user exists on system
 #if defined(__LINUX__) && ! defined(ZT_NO_CAPABILITIES)
 #ifndef PR_CAP_AMBIENT
 #define PR_CAP_AMBIENT			 47
@@ -1735,7 +1736,7 @@ static void _sighandlerFatal(int sig, siginfo_t* info, void*)
 #define PR_CAP_AMBIENT_LOWER	 3
 #define PR_CAP_AMBIENT_CLEAR_ALL 4
 #endif
-#define ZT_LINUX_USER			"zerotier-one"
+#define ZT_LINUX_USER			GRID0_LINUX_USER // GRID0 rebrand (see include/GRID0Branding.hpp)
 #define ZT_HAVE_DROP_PRIVILEGES 1
 namespace {
 
@@ -1798,7 +1799,7 @@ static void dropPrivileges(const char* procName, const std::string& homeDir)
 	if (getuid() != 0)
 		return;
 
-	// dropPrivileges switches to zerotier-one user while retaining CAP_NET_ADMIN
+	// dropPrivileges switches to grid0-pc user while retaining CAP_NET_ADMIN
 	// and CAP_NET_RAW capabilities.
 	struct passwd* targetUser = getpwnam(ZT_LINUX_USER);
 	if (! targetUser)
@@ -2066,8 +2067,8 @@ static void printHelp(const char* cn, FILE* out)
 	fprintf(out, "  -D                - Remove all instances of Windows tap device (Windows)" ZT_EOL_S);
 #endif	 // __WINDOWS__
 
-	fprintf(out, "  -i                - Generate and manage identities (zerotier-idtool)" ZT_EOL_S);
-	fprintf(out, "  -q                - Query API (zerotier-cli)" ZT_EOL_S);
+	fprintf(out, "  -i                - Generate and manage identities (" GRID0_BIN_IDTOOL ")" ZT_EOL_S);
+	fprintf(out, "  -q                - Query API (" GRID0_BIN_CLI ")" ZT_EOL_S);
 }
 
 class _OneServiceRunner {
@@ -2215,9 +2216,10 @@ int main(int argc, char** argv)
 #endif
 #endif	 // __WINDOWS__
 
-	if ((strstr(argv[0], "zerotier-idtool")) || (strstr(argv[0], "ZEROTIER-IDTOOL")))
+	// GRID0: match both zerotier-* and grid0-* invocation names (see include/GRID0Branding.hpp)
+	if ((strstr(argv[0], "idtool")) || (strstr(argv[0], "IDTOOL")))
 		return idtool(argc, argv);
-	if ((strstr(argv[0], "zerotier-cli")) || (strstr(argv[0], "ZEROTIER-CLI")))
+	if ((strstr(argv[0], "-cli")) || (strstr(argv[0], "-CLI")))
 		return cli(argc, argv);
 
 	std::string homeDir;

@@ -1,3 +1,9 @@
+# GRID0 branding: output binary names and home dir (see include/GRID0Branding.hpp)
+GRID0_ONE := grid0-pc
+GRID0_CLI := grid0-cli
+GRID0_IDTOOL := grid0-idtool
+GRID0_HOME_DIR := /var/db/grid0-pc
+
 # This requires GNU make, which is typically "gmake" on BSD systems
 
 INCLUDES=-isystem ext -Iext/prometheus-cpp-lite-1.0/core/include -Iext/prometheus-cpp-lite-1.0/simpleapi/include -Iext/opentelemetry-cpp-api-only/include
@@ -163,16 +169,16 @@ CXXFLAGS+=$(CFLAGS) -std=c++17 #-D_GLIBCXX_USE_C99 -D_GLIBCXX_USE_C99_MATH -D_GL
 all:	one
 
 one:	$(CORE_OBJS) $(ONE_OBJS) one.o
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o zerotier-one $(CORE_OBJS) $(ONE_OBJS) one.o $(LIBS)
-	$(STRIP) zerotier-one
-	ln -sf zerotier-one zerotier-idtool
-	ln -sf zerotier-one zerotier-cli
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(GRID0_ONE) $(CORE_OBJS) $(ONE_OBJS) one.o $(LIBS)
+	$(STRIP) $(GRID0_ONE)
+	ln -sf $(GRID0_ONE) $(GRID0_IDTOOL)
+	ln -sf $(GRID0_ONE) $(GRID0_CLI)
 
-zerotier-one: one
+$(GRID0_ONE): one
 
-zerotier-idtool: one
+$(GRID0_IDTOOL): one
 
-zerotier-cli: one
+$(GRID0_CLI): one
 
 libzerotiercore.a:	$(CORE_OBJS)
 	ar rcs libzerotiercore.a $(CORE_OBJS)
@@ -187,18 +193,18 @@ selftest:	$(CORE_OBJS) $(ONE_OBJS) selftest.o
 zerotier-selftest: selftest
 
 clean:
-	rm -rf *.a *.o node/*.o nonfree/controller/*.o osdep/*.o service/*.o ext/http-parser/*.o build-* zerotier-one zerotier-idtool zerotier-selftest zerotier-cli $(ONE_OBJS) $(CORE_OBJS)
+	rm -rf *.a *.o node/*.o nonfree/controller/*.o osdep/*.o service/*.o ext/http-parser/*.o build-* $(GRID0_ONE) $(GRID0_IDTOOL) zerotier-selftest $(GRID0_CLI) $(ONE_OBJS) $(CORE_OBJS)
 
 debug:	FORCE
 	$(MAKE) -j ZT_DEBUG=1
 
 install:	one
-	rm -f /usr/local/sbin/zerotier-one
-	cp zerotier-one /usr/local/sbin
-	ln -sf /usr/local/sbin/zerotier-one /usr/local/sbin/zerotier-cli
-	ln -sf /usr/local/sbin/zerotier-one /usr/local/bin/zerotier-idtool
+	rm -f /usr/local/sbin/$(GRID0_ONE)
+	cp $(GRID0_ONE) /usr/local/sbin
+	ln -sf /usr/local/sbin/$(GRID0_ONE) /usr/local/sbin/$(GRID0_CLI)
+	ln -sf /usr/local/sbin/$(GRID0_ONE) /usr/local/bin/$(GRID0_IDTOOL)
 
 uninstall:	FORCE
-	rm -rf /usr/local/sbin/zerotier-one /usr/local/sbin/zerotier-cli /usr/local/bin/zerotier-idtool /var/db/zerotier-one/zerotier-one.port /var/db/zerotier-one/zerotier-one.pid /var/db/zerotier-one/iddb.d
+	rm -rf /usr/local/sbin/$(GRID0_ONE) /usr/local/sbin/$(GRID0_CLI) /usr/local/bin/$(GRID0_IDTOOL) $(GRID0_HOME_DIR)/$(GRID0_ONE).port $(GRID0_HOME_DIR)/$(GRID0_ONE).pid $(GRID0_HOME_DIR)/iddb.d
 
 FORCE:

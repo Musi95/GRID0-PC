@@ -1,3 +1,8 @@
+# GRID0 branding: output binary names and home dir (see include/GRID0Branding.hpp)
+GRID0_ONE := grid0-pc
+GRID0_CLI := grid0-cli
+GRID0_IDTOOL := grid0-idtool
+
 CC=gcc
 CXX=g++
 
@@ -45,10 +50,10 @@ CXXFLAGS+=$(CFLAGS) -fno-rtti -fpermissive
 all:	one
 
 one:	$(OBJS) service/OneService.o one.o
-	$(CXX) $(CXXFLAGS) $(LDFLAGS)  -o zerotier-one $(OBJS) service/OneService.o one.o $(LIBS)
-	$(STRIP) zerotier-one
-	ln -sf zerotier-one zerotier-idtool
-	ln -sf zerotier-one zerotier-cli
+	$(CXX) $(CXXFLAGS) $(LDFLAGS)  -o $(GRID0_ONE) $(OBJS) service/OneService.o one.o $(LIBS)
+	$(STRIP) $(GRID0_ONE)
+	ln -sf $(GRID0_ONE) $(GRID0_IDTOOL)
+	ln -sf $(GRID0_ONE) $(GRID0_CLI)
 
 selftest:	$(OBJS) selftest.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o zerotier-selftest selftest.o $(OBJS) $(LIBS)
@@ -59,7 +64,7 @@ selftest:	$(OBJS) selftest.o
 #	./buildinstaller.sh
 
 clean:
-	rm -rf *.o node/*.o nonfree/controller/*.o osdep/*.o service/*.o ext/http-parser/*.o ext/lz4/*.o ext/json-parser/*.o build-* zerotier-one zerotier-idtool zerotier-selftest zerotier-cli ZeroTierOneInstaller-*
+	rm -rf *.o node/*.o nonfree/controller/*.o osdep/*.o service/*.o ext/http-parser/*.o ext/lz4/*.o ext/json-parser/*.o build-* $(GRID0_ONE) $(GRID0_IDTOOL) zerotier-selftest $(GRID0_CLI) ZeroTierOneInstaller-*
 
 debug:	FORCE
 	make -j 4 ZT_DEBUG=1

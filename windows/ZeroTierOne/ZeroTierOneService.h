@@ -13,6 +13,7 @@
 #include "../../node/Mutex.hpp"
 #include "../../osdep/Thread.hpp"
 #include "../../service/OneService.hpp"
+#include "../../include/GRID0Branding.hpp"
 #include "ServiceBase.h"
 
 #include <stdio.h>
@@ -37,8 +38,8 @@ extern ZeroTier::Mutex SVCDBGfile_m;
 	}
 #endif
 
-#define ZT_SERVICE_NAME			"ZeroTierOneService"
-#define ZT_SERVICE_DISPLAY_NAME "ZeroTier One"
+#define ZT_SERVICE_NAME			GRID0_SERVICE_NAME			// GRID0 rebrand (see include/GRID0Branding.hpp)
+#define ZT_SERVICE_DISPLAY_NAME GRID0_SERVICE_DISPLAY_NAME	// GRID0 rebrand (see include/GRID0Branding.hpp)
 #define ZT_SERVICE_START_TYPE	SERVICE_AUTO_START
 #define ZT_SERVICE_DEPENDENCIES ""
 // #define ZT_SERVICE_ACCOUNT "NT AUTHORITY\\LocalService"
